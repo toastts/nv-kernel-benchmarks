@@ -10,6 +10,9 @@
 
 const std::string errLogFile = "matrixValidationFailure.txt";
 
+const char *kernel_names[] = {"cuBLAS FP32", "Naive GEMM",
+                              "Global Memory Coalescing GEMM"};
+
 int main(int argc, char **argv) {
   if (argc != 2) {
     std::cerr << "select kernel range from [0,2]" << std::endl;
@@ -30,7 +33,8 @@ int main(int argc, char **argv) {
   }
   cudaCheck(cudaSetDevice(deviceIdx));
 
-  printf("Running kernel %d on device %d.\n", kernel_num, deviceIdx);
+  printf("Running kernel %s on device %d.\n", kernel_names[kernel_num],
+         deviceIdx);
 
   // print some device info
   CudaDeviceInfo();
