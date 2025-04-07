@@ -1,0 +1,56 @@
+interactive -c 4 -G a100:1 -t 120 --mem=32G 
+
+
+export CUDACXX=${CUDA_HOME}/bin/nvcc
+
+mkdir build && cd build
+
+cmake .. -DCUTLASS_NVCC_ARCHS=80 # sets to Ampere architecture and build entire lib
+
+cmake .. -DCUTLASS_NVCC_ARCHS=80 -DCUTLASS_LIBRARY_KERNELS=s*gemm
+
+
+
+
+######### BENCHMARKS #############
+cuBLAS results:
+dimensions(m=n=k) 128, alpha: 0.5, beta: 3
+Average elapsed time: (0.000818) s, performance: (    5.1) GFLOPS. size: (128).
+dimensions(m=n=k) 256, alpha: 0.5, beta: 3
+Average elapsed time: (0.000087) s, performance: (  384.4) GFLOPS. size: (256).
+dimensions(m=n=k) 512, alpha: 0.5, beta: 3
+Average elapsed time: (0.000032) s, performance: ( 8434.5) GFLOPS. size: (512).
+dimensions(m=n=k) 1024, alpha: 0.5, beta: 3
+Average elapsed time: (0.000144) s, performance: (14947.6) GFLOPS. size: (1024).
+dimensions(m=n=k) 2048, alpha: 0.5, beta: 3
+Average elapsed time: (0.001077) s, performance: (15958.8) GFLOPS. size: (2048).
+dimensions(m=n=k) 4096, alpha: 0.5, beta: 3
+Average elapsed time: (0.007376) s, performance: (18632.7) GFLOPS. size: (4096).
+
+warptiling results:
+dimensions(m=n=k) 128, alpha: 0.5, beta: 3
+Average elapsed time: (0.000044) s, performance: (   94.7) GFLOPS. size: (128).
+dimensions(m=n=k) 256, alpha: 0.5, beta: 3
+Average elapsed time: (0.000077) s, performance: (  434.6) GFLOPS. size: (256).
+dimensions(m=n=k) 512, alpha: 0.5, beta: 3
+Average elapsed time: (0.000147) s, performance: ( 1827.5) GFLOPS. size: (512).
+dimensions(m=n=k) 1024, alpha: 0.5, beta: 3
+Average elapsed time: (0.000287) s, performance: ( 7475.9) GFLOPS. size: (1024).
+dimensions(m=n=k) 2048, alpha: 0.5, beta: 3
+Average elapsed time: (0.001436) s, performance: (11967.1) GFLOPS. size: (2048).
+dimensions(m=n=k) 4096, alpha: 0.5, beta: 3
+Average elapsed time: (0.008102) s, performance: (16964.6) GFLOPS. size: (4096).
+
+naive results:
+dimensions(m=n=k) 128, alpha: 0.5, beta: 3
+Average elapsed time: (0.000112) s, performance: (   37.3) GFLOPS. size: (128).
+dimensions(m=n=k) 256, alpha: 0.5, beta: 3
+Average elapsed time: (0.000220) s, performance: (  152.5) GFLOPS. size: (256).
+dimensions(m=n=k) 512, alpha: 0.5, beta: 3
+Average elapsed time: (0.001295) s, performance: (  207.3) GFLOPS. size: (512).
+dimensions(m=n=k) 1024, alpha: 0.5, beta: 3
+Average elapsed time: (0.008042) s, performance: (  267.0) GFLOPS. size: (1024).
+dimensions(m=n=k) 2048, alpha: 0.5, beta: 3
+Average elapsed time: (0.058928) s, performance: (  291.5) GFLOPS. size: (2048).
+dimensions(m=n=k) 4096, alpha: 0.5, beta: 3
+Average elapsed time: (0.470528) s, performance: (  292.1) GFLOPS. size: (4096).
