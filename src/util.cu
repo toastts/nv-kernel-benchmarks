@@ -1,4 +1,8 @@
 #include "util.cuh"
+#include <cmath>
+#include <cstdio>
+#include <fstream>
+#include <iomanip>
 
 void cudaCheck(cudaError_t error, const char *file, int line) {
   if (error != cudaSuccess) {
