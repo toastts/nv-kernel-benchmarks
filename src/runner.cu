@@ -8,6 +8,8 @@
 #include <fstream>
 #include <iomanip>
 
+#define CEIL_DIV(M, N) (((M) + (N)-1) / (N))
+
 float get_sec() {
   struct timeval time;
   gettimeofday(&time, NULL);
@@ -26,7 +28,7 @@ void run_cublas(cublasHandle_t handle, int M, int N, int K, float alpha,
   // cuBLAS uses column-major order. So we change the order of our row-major A &
   // B, since (B^T*A^T)^T = (A*B)
   // This runs cuBLAS in full fp32 mode
-  cublasFP32(handle, M, N, K, &alpha, A, B, &beta, C);
+  cublasFP32(handle, M, N, K, alpha, A, B, beta, C);
 }
 
 void run_simple_gemm(int M, int N, int K, float alpha, float *A, float *B,
