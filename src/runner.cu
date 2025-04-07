@@ -1,6 +1,4 @@
 #include "kernels.cuh"
-#include "kernels/cublas.cuh"
-#include "kernels/global_mem.cuh"
 #include "runner.cuh"
 #include "util.cuh"
 #include <cmath>
