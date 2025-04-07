@@ -10,6 +10,10 @@
 ## building
 - `mkdir build && cd build`
 - inside the build directory: `cmake .. && cmake --build .`
+- now run `./gemm [0-2]`
+  - 0 is cuBLAS
+  - 1 is simple gemm
+  - 2 is gemm w global memory coalescing
 
 
 ## resources
