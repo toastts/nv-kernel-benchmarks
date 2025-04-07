@@ -9,6 +9,7 @@
 
 ## building
 - `mkdir build && cd build`
+- inside the build directory: `cmake .. && cmake --build .`
 
 
 ## resources
