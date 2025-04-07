@@ -24,11 +24,13 @@ int div_ceil(int numerator, int denominator) {
 }
 
 void run_cublas(cublasHandle_t handle, int M, int N, int K, float alpha,
-                float *A, float *B, float beta, float *C) {
+                   float *A, float *B, float beta, float *C) {
   // cuBLAS uses column-major order. So we change the order of our row-major A &
   // B, since (B^T*A^T)^T = (A*B)
   // This runs cuBLAS in full fp32 mode
-  cublasFP32(handle, M, N, K, alpha, A, B, beta, C);
+  cublasGemmEx(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, M, K, &alpha, B, CUDA_R_32F,
+               N, A, CUDA_R_32F, K, &beta, C, CUDA_R_32F, N, CUBLAS_COMPUTE_32F,
+               CUBLAS_GEMM_DEFAULT_TENSOR_OP);
 }
 
 void run_simple_gemm(int M, int N, int K, float alpha, float *A, float *B,
