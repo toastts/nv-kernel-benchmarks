@@ -7,8 +7,6 @@
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
 
-#define CEIL_DIV(m, n) (((m) + (n) - 1) / (n))
-
 template <const int BM, const int BN, const int BK, const int TM>
 __global__ void blocktile_1D(int M, int N, int K, float alpha, const float *A,
                              const float *B, float beta, float *C) {
