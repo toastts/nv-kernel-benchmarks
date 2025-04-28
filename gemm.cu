@@ -21,8 +21,8 @@ int main(int argc, char **argv) {
 
   // get kernel number
   int kernel_num = std::stoi(argv[1]);
-  if (kernel_num < 0 || kernel_num > 2) {
-    std::cerr << "Please enter a valid kernel number [0,2]" << std::endl;
+  if (kernel_num < 0 || kernel_num > 4) {
+    std::cerr << "Please enter a valid kernel number [0,4]" << std::endl;
     exit(EXIT_FAILURE);
   }
 
