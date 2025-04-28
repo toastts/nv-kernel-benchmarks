@@ -133,23 +133,48 @@ int main(int argc, char **argv) {
     }
 
     cudaEventRecord(beg);
+    float h2d_time, d2h_time, kernel_time;
+    
+    // Time H2D transfers
+    cudaEvent_t h2d_start, h2d_end;
+    cudaEventCreate(&h2d_start);
+    cudaEventCreate(&h2d_end);
+    
+    cudaEventRecord(h2d_start);
+    cudaMemcpy(dA, A, sizeof(float) * m * k, cudaMemcpyHostToDevice);
+    cudaMemcpy(dB, B, sizeof(float) * k * n, cudaMemcpyHostToDevice);
+    cudaEventRecord(h2d_end);
+    cudaEventSynchronize(h2d_end);
+    cudaEventElapsedTime(&h2d_time, h2d_start, h2d_end);
+    
+    // Time kernel execution
+    cudaEvent_t kernel_start, kernel_end;
+    cudaEventCreate(&kernel_start);
+    cudaEventCreate(&kernel_end);
+    
+    cudaEventRecord(kernel_start);
     for (int j = 0; j < repeat_times; j++) {
-      // We don't reset dC between runs to save time
       run_kernel(kernel_num, m, n, k, alpha, dA, dB, beta, dC, handle);
     }
-    cudaEventRecord(end);
-    cudaEventSynchronize(beg);
-    cudaEventSynchronize(end);
-    cudaEventElapsedTime(&elapsed_time, beg, end);
-    elapsed_time /= 1000.; // Convert to seconds
-
-    long flops = 2 * m * n * k;
+    cudaEventRecord(kernel_end);
+    cudaEventSynchronize(kernel_end);
+    cudaEventElapsedTime(&kernel_time, kernel_start, kernel_end);
+    
+    // Calculate metrics
+    long total_bytes = (m * k + k * n + m * n) * sizeof(float);
+    float gb_per_sec = (total_bytes * repeat_times) / (1e9 * kernel_time/1000.0);
+    long flops = 2 * m * n * k; // Keep original FLOPS calculation
+    float flops_per_byte = (float)flops / total_bytes;
+    
     printf(
-        "Average elapsed time: (%7.6f) s, performance: (%7.1f) GFLOPS. size: "
-        "(%ld).\n",
-        elapsed_time / repeat_times,
-        (repeat_times * flops * 1e-9) / elapsed_time, m);
-    fflush(stdout);
+        "Average elapsed time: (%7.6f) s, performance: (%7.1f) GFLOPS, M B/W: (%7.1f) GB/s, AI: (%4.1f) FLOPS/B, H2D: (%4.1f%%), size: (%ld).\n",
+        kernel_time / (repeat_times * 1000.0),
+        (repeat_times * flops * 1e-9) / (kernel_time/1000.0),
+        gb_per_sec,
+        flops_per_byte,
+        (h2d_time/kernel_time) * 100,
+        m);
+
     // make dC and dC_ref equal again (we modified dC while calling our kernel
     // for benchmarking)
     cudaCheck(cudaMemcpy(dC, dC_ref, sizeof(float) * m * n,
