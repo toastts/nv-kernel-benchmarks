@@ -5,8 +5,8 @@
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
 
-__global__ void simple_gemm(int M, int N, int K, float alpha, const float *A,
-                            const float *B, float beta, float *C) {
+__global__ void simple(int M, int N, int K, float alpha, const float *A,
+                       const float *B, float beta, float *C) {
   const uint x = blockIdx.x * blockDim.x + threadIdx.x;
   const uint y = blockIdx.y * blockDim.y + threadIdx.y;
 

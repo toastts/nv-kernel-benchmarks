@@ -7,9 +7,8 @@
 #include <cuda_runtime.h>
 
 template <const uint BLOCKSIZE>
-__global__ void global_mem_gemm(int M, int N, int K, float alpha,
-                                          const float *A, const float *B,
-                                          float beta, float *C) {
+__global__ void global_mem(int M, int N, int K, float alpha, const float *A,
+                           const float *B, float beta, float *C) {
   const int cRow = blockIdx.x * BLOCKSIZE + (threadIdx.x / BLOCKSIZE);
   const int cCol = blockIdx.y * BLOCKSIZE + (threadIdx.x % BLOCKSIZE);
 
