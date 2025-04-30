@@ -1,28 +1,52 @@
 cmake_minimum_required(VERSION 3.19)
+
+# don’t use the old FindCUDA module (CMP0146)  
+cmake_policy(SET CMP0146 NEW)  
+# let find_package() use <Foo>_ROOT hints (CMP0074)  
+cmake_policy(SET CMP0074 NEW)
+
 project(NVIDIA_SGEMM_PRACTICE LANGUAGES CXX CUDA)
+
+# emit compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-find_package(CUDA REQUIRED)
+# modern C++20 + CUDA14
+set(CMAKE_CXX_STANDARD        20   CACHE STRING "")
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CUDA_STANDARD       14   CACHE STRING "")
+set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
-# ensure cuda is available
-include(CheckLanguage)
-check_language(CUDA)
+# target compute capability
+set(CMAKE_CUDA_ARCHITECTURES 80)
 
-set(CMAKE_CXX_STANDARD 20)
-set(CUDA_COMPUTE_CAPABILITY 80)
+# point CUDAToolkit_ROOT to /opt/cuda if you need to
+# set(CUDAToolkit_ROOT "/opt/cuda" CACHE PATH "CUDA toolkit location")
 
-# in debug mode, add debug symbols to device code
-# this disables most optimizations and kills performance
-add_compile_options("$<$<AND:$<CONFIG:Debug>,$<COMPILE_LANGUAGE:CUDA>>:-G;-src-in-ptx>")
-# add_compile_options("--ptxas-options=-v")
+# pull in cuda headers & libraries, including cudart and cublas
+find_package(CUDAToolkit REQUIRED)
 
-# Configure header file search paths
-include_directories(${CUDA_INCLUDE_DIRS})
-include_directories(${PROJECT_SOURCE_DIR}/src)
-# Configure the source file path to be compiled
-aux_source_directory(${PROJECT_SOURCE_DIR}/src SRC)
+# gather all your sources (gemm.cu + anything under src/)
+file(GLOB_RECURSE NVK_SOURCES
+  "${PROJECT_SOURCE_DIR}/src/*.cu"
+  "${PROJECT_SOURCE_DIR}/src/*.cpp"
+)
+list(APPEND NVK_SOURCES "${PROJECT_SOURCE_DIR}/gemm.cu")
 
-# generate executable
-add_executable(gemm gemm.cu ${SRC})
-set_target_properties(gemm PROPERTIES CUDA_ARCHITECTURES ${CUDA_COMPUTE_CAPABILITY})
-target_link_libraries(gemm ${CUDA_LIBRARIES} ${CUDA_CUBLAS_LIBRARIES})
+# define your executable
+add_executable(gemm ${NVK_SOURCES})
+
+# in Debug, compile device code with -G for debug symbols
+target_compile_options(gemm PRIVATE
+  $<$<AND:$<CONFIG:Debug>,$<COMPILE_LANGUAGE:CUDA>>:-G;-src-in-ptx>
+)
+
+# your headers
+target_include_directories(gemm PRIVATE
+  ${PROJECT_SOURCE_DIR}/src
+)
+
+# link only cuBLAS (cudart comes in transitively)
+target_link_libraries(gemm
+  PRIVATE
+    CUDA::cublas
+)
