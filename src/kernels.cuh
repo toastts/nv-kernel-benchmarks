@@ -4,3 +4,4 @@
 #include "kernels/global_mem.cuh"
 #include "kernels/1D_blocktiling.cuh"
 #include "kernels/2D_blocktiling.cuh"
+#include "kernels/vectorized_mem.cuh"

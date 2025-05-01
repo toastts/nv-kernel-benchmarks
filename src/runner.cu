@@ -45,8 +45,8 @@ void run_global_mem_gemm(int M, int N, int K, float alpha, float *A, float *B,
   global_mem<32><<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);
 }
 
-void run_1D_blocktiling_gemm(int M, int N, int K, float alpha, float *A, float *B,
-                        float beta, float *C) {
+void run_1D_blocktiling_gemm(int M, int N, int K, float alpha, float *A,
+                             float *B, float beta, float *C) {
   const uint BM = 64;
   const uint BN = 64;
   const uint BK = 8;
@@ -57,18 +57,33 @@ void run_1D_blocktiling_gemm(int M, int N, int K, float alpha, float *A, float *
       <<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);
 }
 
-void run_2D_blocktiling_gemm(int M, int N, int K, float alpha, float *A, float *B,
+void run_2D_blocktiling_gemm(int M, int N, int K, float alpha, float *A,
+                             float *B, float beta, float *C) {
+  const uint BK = 8;
+  const uint TM = 8;
+  const uint TN = 8;
+  const uint BM = 128;
+  const uint BN = 128;
+  // NOTE: no bounds checking on the kernel here!! don't pass small sizes <128,
+  //  we can't tile that properly :3
+  dim3 gridDim(CEIL_DIV(N, BN), CEIL_DIV(M, BM));
+  dim3 blockDim((BM * BN) / (TM * TN));
+  blocktile_2D<BM, BN, BK, TM, TN>
+      <<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);
+}
+
+void run_vectorized_mem(int M, int N, int K, float alpha, float *A, float *B,
                         float beta, float *C) {
   const uint BK = 8;
   const uint TM = 8;
   const uint TN = 8;
   const uint BM = 128;
   const uint BN = 128;
-  //NOTE: no bounds checking on the kernel here!! don't pass small sizes <128,
-  // we can't tile that properly :3
+  // NOTE: no bounds checking on the kernel here!! don't pass small sizes <128,
+  //  we can't tile that properly :3
   dim3 gridDim(CEIL_DIV(N, BN), CEIL_DIV(M, BM));
   dim3 blockDim((BM * BN) / (TM * TN));
-  blocktile_2D<BM, BN, BK, TM, TN>
+  sgemmVectorize<BM, BN, BK, TM, TN>
       <<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);
 }
 
@@ -89,6 +104,9 @@ void run_kernel(int kernel_num, int M, int N, int K, float alpha, float *A,
     break;
   case 4:
     run_2D_blocktiling_gemm(M, N, K, alpha, A, B, beta, C);
+    break;
+  case 5:
+    run_vectorized_mem(M, N, K, alpha, A, B, beta, C);
     break;
   default:
     throw std::invalid_argument("Unknown kernel number");
