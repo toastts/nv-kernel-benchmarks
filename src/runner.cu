@@ -7,7 +7,7 @@
 #include <fstream>
 #include <iomanip>
 
-#define CEIL_DIV(M, N) (((M) + (N) - 1) / (N))
+#define DIV(M, N) (((M) + (N) - 1) / (N))
 
 float get_sec() {
   struct timeval time;
@@ -33,14 +33,14 @@ void run_cublas(cublasHandle_t handle, int M, int N, int K, float alpha,
 
 void run_simple_gemm(int M, int N, int K, float alpha, float *A, float *B,
                      float beta, float *C) {
-  dim3 gridDim(CEIL_DIV(M, 32), CEIL_DIV(N, 32));
+  dim3 gridDim(DIV(M, 32), DIV(N, 32));
   dim3 blockDim(32, 32);
   simple<<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);
 }
 
 void run_global_mem_gemm(int M, int N, int K, float alpha, float *A, float *B,
                          float beta, float *C) {
-  dim3 gridDim(CEIL_DIV(M, 32), CEIL_DIV(N, 32));
+  dim3 gridDim(DIV(M, 32), DIV(N, 32));
   dim3 blockDim(32 * 32);
   global_mem<32><<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);
 }
@@ -51,7 +51,7 @@ void run_1D_blocktiling_gemm(int M, int N, int K, float alpha, float *A,
   const uint BN = 64;
   const uint BK = 8;
   const uint TM = 8;
-  dim3 gridDim(CEIL_DIV(N, BN), CEIL_DIV(M, BM));
+  dim3 gridDim(DIV(N, BN), DIV(M, BM));
   dim3 blockDim((BM * BN) / TM);
   blocktile_1D<BM, BN, BK, TM>
       <<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);
@@ -66,7 +66,7 @@ void run_2D_blocktiling_gemm(int M, int N, int K, float alpha, float *A,
   const uint BN = 128;
   // NOTE: no bounds checking on the kernel here!! don't pass small sizes <128,
   //  we can't tile that properly :3
-  dim3 gridDim(CEIL_DIV(N, BN), CEIL_DIV(M, BM));
+  dim3 gridDim(DIV(N, BN), DIV(M, BM));
   dim3 blockDim((BM * BN) / (TM * TN));
   blocktile_2D<BM, BN, BK, TM, TN>
       <<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);
@@ -81,7 +81,7 @@ void run_vectorized_mem(int M, int N, int K, float alpha, float *A, float *B,
   const uint BN = 128;
   // NOTE: no bounds checking on the kernel here!! don't pass small sizes <128,
   //  we can't tile that properly :3
-  dim3 gridDim(CEIL_DIV(N, BN), CEIL_DIV(M, BM));
+  dim3 gridDim(DIV(N, BN), DIV(M, BM));
   dim3 blockDim((BM * BN) / (TM * TN));
   sgemmVectorize<BM, BN, BK, TM, TN>
       <<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);

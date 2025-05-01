@@ -2,10 +2,8 @@
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
 #include <fstream>
-#include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
-#include <time.h>
 #include <unistd.h>
 
 void cudaCheck(cudaError_t error, const char *file,

@@ -1,4 +1,7 @@
 build/
+results/
+profiler/
 cmake-build-debug/
 cmake-build-release/
 SGEMM_CUDA/
+.clangd

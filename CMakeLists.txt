@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.19)
 
-# don’t use the old FindCUDA module (CMP0146)  
+# don’t use old FindCUDA module (CMP0146)  
 cmake_policy(SET CMP0146 NEW)  
 # let find_package() use <Foo>_ROOT hints (CMP0074)  
 cmake_policy(SET CMP0074 NEW)
@@ -17,22 +17,22 @@ set(CMAKE_CUDA_STANDARD       14   CACHE STRING "")
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
 # target compute capability
-set(CMAKE_CUDA_ARCHITECTURES 80)
+set(CMAKE_CUDA_ARCHITECTURES 89)
 
-# point CUDAToolkit_ROOT to /opt/cuda if you need to
+# point CUDAToolkit_ROOT to /opt/cuda if we need to
 # set(CUDAToolkit_ROOT "/opt/cuda" CACHE PATH "CUDA toolkit location")
 
 # pull in cuda headers & libraries, including cudart and cublas
 find_package(CUDAToolkit REQUIRED)
 
-# gather all your sources (gemm.cu + anything under src/)
+# gather all sources (gemm.cu + anything under src/)
 file(GLOB_RECURSE NVK_SOURCES
   "${PROJECT_SOURCE_DIR}/src/*.cu"
   "${PROJECT_SOURCE_DIR}/src/*.cpp"
 )
 list(APPEND NVK_SOURCES "${PROJECT_SOURCE_DIR}/gemm.cu")
 
-# define your executable
+# define executable
 add_executable(gemm ${NVK_SOURCES})
 
 # in Debug, compile device code with -G for debug symbols
@@ -40,7 +40,7 @@ target_compile_options(gemm PRIVATE
   $<$<AND:$<CONFIG:Debug>,$<COMPILE_LANGUAGE:CUDA>>:-G;-src-in-ptx>
 )
 
-# your headers
+# headers
 target_include_directories(gemm PRIVATE
   ${PROJECT_SOURCE_DIR}/src
 )
