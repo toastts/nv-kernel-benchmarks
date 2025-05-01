@@ -1,7 +1,7 @@
+#include "src/util.cuh"
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
-#include <fstream>
 #include <iostream>
 #include <runner.cuh>
 #include <vector>
@@ -11,18 +11,19 @@
 const std::string errLogFile = "matrixValidationFailure.txt";
 
 const char *kernel_names[] = {"cuBLAS FP32", "Naive GEMM",
-                              "Global Memory Coalescing GEMM"};
+                              "Global Memory Coalescing GEMM", "1D Blocktiling",
+                              "2D Blocktiling", "Vectorized Memory Access"};
 
 int main(int argc, char **argv) {
   if (argc != 2) {
-    std::cerr << "select kernel range from [0,2]" << std::endl;
+    std::cerr << "select kernel range from [0,5]" << std::endl;
     exit(EXIT_FAILURE);
   }
 
   // get kernel number
   int kernel_num = std::stoi(argv[1]);
-  if (kernel_num < 0 || kernel_num > 4) {
-    std::cerr << "Please enter a valid kernel number [0,4]" << std::endl;
+  if (kernel_num < 0 || kernel_num > 5) {
+    std::cerr << "Please enter a valid kernel number [0,5]" << std::endl;
     exit(EXIT_FAILURE);
   }
 
@@ -92,7 +93,7 @@ int main(int argc, char **argv) {
   cudaCheck(cudaMemcpy(dC_ref, C, sizeof(float) * max_size * max_size,
                        cudaMemcpyHostToDevice));
 
-  int repeat_times = 50;
+  int repeat_times = 1;
   for (int size : SIZE) {
     m = n = k = size;
 
@@ -134,24 +135,24 @@ int main(int argc, char **argv) {
 
     cudaEventRecord(beg);
     float h2d_time, d2h_time, kernel_time;
-    
+
     // Time H2D transfers
     cudaEvent_t h2d_start, h2d_end;
     cudaEventCreate(&h2d_start);
     cudaEventCreate(&h2d_end);
-    
+
     cudaEventRecord(h2d_start);
     cudaMemcpy(dA, A, sizeof(float) * m * k, cudaMemcpyHostToDevice);
     cudaMemcpy(dB, B, sizeof(float) * k * n, cudaMemcpyHostToDevice);
     cudaEventRecord(h2d_end);
     cudaEventSynchronize(h2d_end);
     cudaEventElapsedTime(&h2d_time, h2d_start, h2d_end);
-    
+
     // Time kernel execution
     cudaEvent_t kernel_start, kernel_end;
     cudaEventCreate(&kernel_start);
     cudaEventCreate(&kernel_end);
-    
+
     cudaEventRecord(kernel_start);
     for (int j = 0; j < repeat_times; j++) {
       run_kernel(kernel_num, m, n, k, alpha, dA, dB, beta, dC, handle);
@@ -159,21 +160,20 @@ int main(int argc, char **argv) {
     cudaEventRecord(kernel_end);
     cudaEventSynchronize(kernel_end);
     cudaEventElapsedTime(&kernel_time, kernel_start, kernel_end);
-    
+
     // Calculate metrics
     long total_bytes = (m * k + k * n + m * n) * sizeof(float);
-    float gb_per_sec = (total_bytes * repeat_times) / (1e9 * kernel_time/1000.0);
+    float gb_per_sec =
+        (total_bytes * repeat_times) / (1e9 * kernel_time / 1000.0);
     long flops = 2 * m * n * k; // Keep original FLOPS calculation
     float flops_per_byte = (float)flops / total_bytes;
-    
+
     printf(
-        "Average elapsed time: (%7.6f) s, performance: (%7.1f) GFLOPS, M B/W: (%7.1f) GB/s, AI: (%4.1f) FLOPS/B, H2D: (%4.1f%%), size: (%ld).\n",
+        "Average elapsed time: (%7.6f) s, performance: (%7.1f) GFLOPS, M B/W: "
+        "(%7.1f) GB/s, AI: (%4.1f) FLOPS/B, H2D: (%4.1f%%), size: (%ld).\n",
         kernel_time / (repeat_times * 1000.0),
-        (repeat_times * flops * 1e-9) / (kernel_time/1000.0),
-        gb_per_sec,
-        flops_per_byte,
-        (h2d_time/kernel_time) * 100,
-        m);
+        (repeat_times * flops * 1e-9) / (kernel_time / 1000.0), gb_per_sec,
+        flops_per_byte, (h2d_time / kernel_time) * 100, m);
 
     // make dC and dC_ref equal again (we modified dC while calling our kernel
     // for benchmarking)
