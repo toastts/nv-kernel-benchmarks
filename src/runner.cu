@@ -59,16 +59,16 @@ void run_1D_blocktiling_gemm(int M, int N, int K, float alpha, float *A,
 
 void run_2D_blocktiling_gemm(int M, int N, int K, float alpha, float *A,
                              float *B, float beta, float *C) {
-  const uint BK = 8;
-  const uint TM = 8;
-  const uint TN = 8;
-  const uint BM = 128;
-  const uint BN = 128;
+  const uint tile_BK = 8;
+  const uint tile_TM = 8;
+  const uint tile_TN = 8;
+  const uint tile_BM = 128;
+  const uint tile_BN = 128;
   // NOTE: no bounds checking on the kernel here!! don't pass small sizes <128,
   //  we can't tile that properly :3
-  dim3 gridDim(DIV(N, BN), DIV(M, BM));
-  dim3 blockDim((BM * BN) / (TM * TN));
-  blocktile_2D<BM, BN, BK, TM, TN>
+  dim3 gridDim(DIV(N, tile_BN), DIV(M, tile_BM));
+  dim3 blockDim((tile_BM * tile_BN) / (tile_TM * tile_TN));
+  blocktile_2D<tile_BM, tile_BN, tile_BK, tile_TM, tile_TN>
       <<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);
 }
 
