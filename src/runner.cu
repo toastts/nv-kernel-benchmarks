@@ -77,14 +77,23 @@ void run_vectorized_mem(int M, int N, int K, float alpha, float *A, float *B,
   const uint BK = 8;
   const uint TM = 8;
   const uint TN = 8;
-  const uint BM = 128;
-  const uint BN = 128;
-  // NOTE: no bounds checking on the kernel here!! don't pass small sizes <128,
-  //  we can't tile that properly :3
-  dim3 gridDim(DIV(N, BN), DIV(M, BM));
-  dim3 blockDim((BM * BN) / (TM * TN));
-  sgemmVectorize<BM, BN, BK, TM, TN>
-      <<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);
+
+  // check the bounds on the kernel for smaller matrix sizes
+  if (M >= 128 and N >= 128) {
+    const uint BM = 128;
+    const uint BN = 128;
+    dim3 gridDim(DIV(N, BN), DIV(M, BM));
+    dim3 blockDim((BM * BN) / (TM * TN));
+    sgemmVectorize<BM, BN, BK, TM, TN>
+        <<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);
+  } else {
+    const uint BM = 64;
+    const uint BN = 64;
+    dim3 gridDim(DIV(N, BN), DIV(M, BM));
+    dim3 blockDim((BM * BN) / (TM * TN));
+    sgemmVectorize<BM, BN, BK, TM, TN>
+        <<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);
+  }
 }
 
 void run_kernel(int kernel_num, int M, int N, int K, float alpha, float *A,
